@@ -38,33 +38,32 @@ namespace BackJWTAuth0Core.Controllers
             {
                 return BadRequest("Invalid client request");
             }
-
-            else if (user.UserName == "user" && user.Password == "123456")
+            else
             {
-                var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("superSecretKey@345"));
-                var signinCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
-
-                var claims = new List<Claim>
+                var claims = new Claim[]
                 {
-                    new Claim(ClaimTypes.Name, user.UserName),
-                    new Claim(ClaimTypes.Role, "Manager")
+                    new Claim("UserName", user.UserName),
+                    new Claim(ClaimTypes.Role, user.RoleName)
                 };
 
-                var tokeOptions = new JwtSecurityToken(
-                    issuer: "https://localhost:5001",
-                    audience: "https://localhost:5001",
-                    claims: claims,
-                    expires: DateTime.Now.AddMinutes(5),
-                    signingCredentials: signinCredentials
-                );
+                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["ApiAuth:SecretKey"]));
+                var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+                var tokeOptions = new JwtSecurityToken(
+                    issuer: _configuration["ApiAuth:Issuer"],
+                    audience: _configuration["ApiAuth:Audience"],
+                    claims: claims,
+                    expires: DateTime.Now.AddMinutes(Int32.Parse(_configuration["ApiAuth:expiresAt"])),
+                    notBefore: DateTime.Now,
+                    signingCredentials: creds
+                );
                 var tokenString = new JwtSecurityTokenHandler().WriteToken(tokeOptions);
                 return Ok(new { Token = tokenString });
             }
-            else
+            /*else
             {
                 return Unauthorized();
-            }
+            }*/
         }
     }
 }
