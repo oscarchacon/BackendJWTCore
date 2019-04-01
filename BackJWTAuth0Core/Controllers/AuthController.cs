@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Configuration;
 using System.Linq;
+using BackJWTAuth0Core.Security;
 
 namespace BackJWTAuth0Core.Controllers
 {
@@ -29,6 +30,11 @@ namespace BackJWTAuth0Core.Controllers
         }
 
         // GET api/values
+        /// <summary>
+        /// Login the specified _user.
+        /// </summary>
+        /// <returns>The login.</returns>
+        /// <param name="_user">User.</param>
         [HttpPost, Route("login")]
         public IActionResult Login([FromBody]UserModel _user)
         {
@@ -40,24 +46,7 @@ namespace BackJWTAuth0Core.Controllers
             }
             else
             {
-                var claims = new Claim[]
-                {
-                    new Claim("UserName", user.UserName),
-                    new Claim(ClaimTypes.Role, user.RoleName)
-                };
-
-                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["ApiAuth:SecretKey"]));
-                var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-                var tokeOptions = new JwtSecurityToken(
-                    issuer: _configuration["ApiAuth:Issuer"],
-                    audience: _configuration["ApiAuth:Audience"],
-                    claims: claims,
-                    expires: DateTime.Now.AddMinutes(Int32.Parse(_configuration["ApiAuth:expiresAt"])),
-                    notBefore: DateTime.Now,
-                    signingCredentials: creds
-                );
-                var tokenString = new JwtSecurityTokenHandler().WriteToken(tokeOptions);
+                var tokenString = TokenGenerator.GenerateTokenJwt(user.UserName, user.RoleName, _configuration);
                 return Ok(new { Token = tokenString });
             }
             /*else
