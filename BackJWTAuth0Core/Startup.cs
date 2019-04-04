@@ -37,6 +37,9 @@ namespace BackJWTAuth0Core
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             }).AddJwtBearer(jwtBearerOptions =>
             {
+                /*jwtBearerOptions.Authority = Configuration["ApiAuth:Audience"];
+                jwtBearerOptions.Audience = Configuration["ApiAuth:Authority"];
+                jwtBearerOptions.RequireHttpsMetadata = false;*/
                 jwtBearerOptions.TokenValidationParameters = new TokenValidationParameters()
                 {
                     ValidateActor = true,
