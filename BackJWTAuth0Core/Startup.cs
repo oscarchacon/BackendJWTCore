@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using BackJWTAuth0Core.Handlers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -56,7 +60,23 @@ namespace BackJWTAuth0Core
             {
                 jwtBearerOptions.Authority = Configuration["ApiAuth:Audience"];
                 jwtBearerOptions.Audience = Configuration["ApiAuth:Authority"];
-                jwtBearerOptions.RequireHttpsMetadata = false;
+                //jwtBearerOptions.RequireHttpsMetadata = false;
+
+                jwtBearerOptions.Events = new JwtBearerEvents
+                {
+                    OnTokenValidated = context =>
+                    {
+                        if(context.SecurityToken is JwtSecurityToken token)
+                        {
+                            if (context.Principal.Identity is ClaimsIdentity identity)
+                            {
+                                identity.AddClaim(new Claim("access_token", token.RawData));
+                            }
+                        }
+
+                        return Task.FromResult(0);
+                    }
+                };
                 /*jwtBearerOptions.TokenValidationParameters = new TokenValidationParameters()
                 {
                     ValidateActor = true,
@@ -69,6 +89,10 @@ namespace BackJWTAuth0Core
                 };*/
             });
 
+            services.AddAuthorization();
+
+
+            services.AddSingleton<IAuthorizationHandler, HasScopeHandler>();
             // Register the Swagger generator, defining 1 or more Swagger documents
             services.AddSwaggerGen(c => 
             { 
@@ -90,13 +114,14 @@ namespace BackJWTAuth0Core
             else
             {
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                //app.UseHsts();
-                app.UseExceptionHandler("/Home/Error");
+                app.UseHsts();
+                //app.UseExceptionHandler("/Home/Error");
             }
 
+            app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseAuthentication();
-            app.UseCors("EnableCORS");
+            app.UseCors("AllowSpecificOrigin");
 
             app.UseHttpsRedirection();
 
