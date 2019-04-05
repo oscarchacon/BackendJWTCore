@@ -31,16 +31,33 @@ namespace BackJWTAuth0Core
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+
+            services.AddCors(options =>
+            {
+                options.AddPolicy("AllowSpecificOrigin", 
+                    builder =>
+                    {
+                        builder
+                            .AllowAnyOrigin()
+                            .AllowAnyHeader()
+                            .AllowAnyMethod()
+                            .AllowCredentials()
+                            //.Build()
+                            ;
+                    });
+            });
+
             services.AddAuthentication(options => {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                //options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             }).AddJwtBearer(jwtBearerOptions =>
             {
-                /*jwtBearerOptions.Authority = Configuration["ApiAuth:Audience"];
+                jwtBearerOptions.Authority = Configuration["ApiAuth:Audience"];
                 jwtBearerOptions.Audience = Configuration["ApiAuth:Authority"];
-                jwtBearerOptions.RequireHttpsMetadata = false;*/
-                jwtBearerOptions.TokenValidationParameters = new TokenValidationParameters()
+                jwtBearerOptions.RequireHttpsMetadata = false;
+                /*jwtBearerOptions.TokenValidationParameters = new TokenValidationParameters()
                 {
                     ValidateActor = true,
                     ValidateAudience = true,
@@ -49,18 +66,8 @@ namespace BackJWTAuth0Core
                     ValidIssuer = Configuration["ApiAuth:Issuer"],
                     ValidAudience = Configuration["ApiAuth:Audience"],
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["ApiAuth:SecretKey"]))
-                };
+                };*/
             });
-
-            services.AddCors(options =>
-            {
-                options.AddPolicy("EnableCORS", builder => 
-                {
-                    builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod().AllowCredentials().Build(); 
-                });
-            });
-
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
             // Register the Swagger generator, defining 1 or more Swagger documents
             services.AddSwaggerGen(c => 
